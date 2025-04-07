@@ -1,0 +1,1836 @@
+﻿# CD Lab
+
+## Lab 1
+
+q1 count reverse merge
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+// Function to count lines and characters in a file
+void countLinesAndChars(const char *filename) {
+        FILE *fp = fopen(filename, "r");
+        if (!fp) { 
+                perror("Error opening file"); 
+                return; 
+        }
+        int lines = 0, chars = 0, ch;
+        while ((ch = fgetc(fp)) != EOF) {
+                chars++;
+                if (ch == '\n') lines++;
+        }
+        fclose(fp);
+        printf("Lines: %d, Characters: %d\n", lines, chars);
+}
+
+// Function to reverse the contents of a file
+void reverseFile(const char *src, const char *dest) {
+        FILE *fp = fopen(src, "r");
+        if (!fp) { 
+                perror("Error opening source file"); 
+                return; 
+        }
+        fseek(fp, 0, SEEK_END);
+        long size = ftell(fp);
+        printf("File size: %ld bytes\n", size);
+        FILE *out = fopen(dest, "w");
+        if (!out) { 
+                perror("Error opening destination file"); 
+                fclose(fp); 
+                return; 
+        }
+        while (size--) {
+                fseek(fp, size, SEEK_SET);
+                fputc(fgetc(fp), out);
+        }
+        fclose(fp);
+        fclose(out);
+}
+
+// Function to merge two files alternately line by line
+void mergeFiles(const char *file1, const char *file2, const char *result) {
+        FILE *fp1 = fopen(file1, "r"), *fp2 = fopen(file2, "r"), *out = fopen(result, "w");
+        if (!fp1 || !fp2 || !out) { 
+                perror("Error opening files"); 
+                return; 
+        }
+        char line[1024];
+        while (fgets(line, sizeof(line), fp1)) {
+                fputs(line, out);
+                if (fgets(line, sizeof(line), fp2)) fputs(line, out);
+        }
+        while (fgets(line, sizeof(line), fp2)) fputs(line, out);
+        
+        fclose(fp1); 
+        fclose(fp2); 
+        fclose(out);
+}
+
+int main() {
+        const char *file1 = "test.txt", *file2 = "test1.txt", *reversed = "test1.txt", *merged = "final.txt";
+
+        printf("Counting lines and characters in %s:\n", file1);
+        countLinesAndChars(file1);
+
+        printf("Reversing file contents of %s into %s:\n", file1, reversed);
+        reverseFile(file1, reversed);
+
+        printf("Merging lines alternately from %s and %s into %s:\n", file1, file2, merged);
+        mergeFiles(file1, file2, merged);
+
+        printf("Done.\n");
+        return 0;
+}
+
+```
+q2 To reverse the file contents and store in another file. Also display the size of file using
+file handling function.
+
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(int argc, char *argv[]) {
+        FILE *inFile, *outFile;
+        long fileSize;
+        char ch;
+
+        if (argc != 3) {
+                fprintf(stderr, "Usage: %s <input_file> <output_file>\n", argv[0]);
+                return 1;
+        }
+
+        // Open input file in binary mode
+        inFile = fopen(argv[1], "rb");
+        if (inFile == NULL) {
+                perror("Error opening input file");
+                return 1;
+        }
+
+        // Open output file in binary mode
+        outFile = fopen(argv[2], "wb");
+        if (outFile == NULL) {
+                perror("Error opening output file");
+                fclose(inFile);
+                return 1;
+        }
+
+        // Determine the file size
+        fseek(inFile, 0, SEEK_END);
+        fileSize = ftell(inFile);
+        printf("Size of input file: %ld bytes\n", fileSize);
+
+        // Reverse read and write
+        for (long i = fileSize - 1; i >= 0; i--) {
+                fseek(inFile, i, SEEK_SET);
+                ch = fgetc(inFile);
+                fputc(ch, outFile);
+        }
+
+        fclose(inFile);
+        fclose(outFile);
+
+        return 0;
+}
+
+q3 To merges lines alternatively from 2 files and stores it in a resultant file
+
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MAX_LINE 1024
+
+int main(int argc, char *argv[]) {
+        FILE *file1, *file2, *outFile;
+        char line[MAX_LINE];
+
+        if (argc != 4) {
+                fprintf(stderr, "Usage: %s <file1> <file2> <output_file>\n", argv[0]);
+                return 1;
+        }
+
+        // Open files
+        file1 = fopen(argv[1], "r");
+        file2 = fopen(argv[2], "r");
+        outFile = fopen(argv[3], "w");
+
+        if (!file1 || !file2 || !outFile) {
+                perror("Error opening file");
+                if (file1) fclose(file1);
+                if (file2) fclose(file2);
+                if (outFile) fclose(outFile);
+                return 1;
+        }
+
+        // Alternate reading and writing
+        char *res1, *res2;
+        while (1) {
+                res1 = fgets(line, MAX_LINE, file1);
+                if (res1) fputs(line, outFile);
+
+                res2 = fgets(line, MAX_LINE, file2);
+                if (res2) fputs(line, outFile);
+
+                if (!res1 && !res2)
+                        break;    // Both files are fully read
+        }
+
+        fclose(file1);
+        fclose(file2);
+        fclose(outFile);
+
+        return 0;
+}
+—————————————
+AD 1Write a C program to collect statistics of a source file and display total number of blank
+lines, total number of lines ending with semicolon, total number of blank spaces.
+#include<stdio.h>
+#include<string.h>
+#include<ctype.h>
+
+Int main(){
+	File *file;
+	char filename[100], line[100];
+	int blanklines=0;
+	int semicolonLines=0;
+	int blankSpaces=0;
+
+	printf(“enter the source file name:”);
+	scanf(“%s”, filename);
+
+	file = fopen(filename, “r”);
+	if(file == NULL){
+		perror(“error opening file”);
+		return 1;
+	}
+
+	while(fgets(line, sizeof(line), file)){
+		int len = strlen(line);
+		int isBlank = 1;
+
+		for(int i=0; I<len; i++){
+			if(!isspace(line[I])){
+				isBlank =0;
+				break;
+			}
+		}
+		if(isBlank){
+			blanklines++;
+		}
+		
+		int end = len -1;
+		while(end >= 0 && isspace(line[end])){
+			end—;
+		}
+	
+
+		if (end >= 0 && line[end] == ‘;’){
+			semicolonLines++;
+		}
+
+		for(int i =0; I<len; i++){
+			if(line[I] == ‘ ‘){
+				blankSpaces++;
+			}
+		}
+	}
+	fclose(file);
+
+
+	printf(“ statistics for file: %s”, file);
+	printf(“tot no. of blank lines : %d”, blankLines);
+	printf(“tot no. of lines ending with semicolon: %d”, semicolonLines);
+	printf(“tot no. of blank spaces: %d”, blankSpaces);
+	
+	return 0;
+}
+AD2 To print five lines of file at a time. The program prompts user to enter the suitable
+option. When the user presses ‘Q’ the program quits and continues when the user presses
+‘C’.
+#include<stdio.h>
+#include<stdlib.h>
+
+
+Int main(){
+	FILE *file;
+	char filename[100], line[1000];
+	char choice;
+	int lineCount = 0;
+
+
+
+	printf(“enter the filename, “r”);
+	if(file == NULL){
+		perror(“error opening file”);
+		return 1;
+	}
+
+	getchar();
+
+	while(fgets(line, sizeof(line), file)){
+		printf(“%s”, line);
+		lineCount++;
+
+		if(lineCount % 5 == 0){
+			printf(“ press ‘C’ to continue or ‘Q’ to quit);
+			choice = getchar();
+
+			getchar();
+
+			if(choice == ‘Q’ || choice == ‘q’){
+				break;
+			}else if (choice != ‘C’ && choice != ‘c’){
+				printf(“invalid input. Exiting);
+				break;
+			}
+		}
+	}
+
+	fclose(file);
+	printf(“ EOF or opes”);
+	return 0;
+}
+————————————————————————————————————————————————
+
+## Lab 2
+
+q1 remove extra space and tabs
+
+```c
+#include <stdio.h>
+#include <ctype.h>
+
+int main(int argc, char *argv[]) {
+        if (argc != 3) {
+                printf("Usage: %s <input_file> <output_file>\n", argv[0]);
+                return 1;
+        }
+
+        FILE *input = fopen(argv[1], "r");
+        FILE *output = fopen(argv[2], "w");
+        if (!input || !output) {
+                perror("Error opening file");
+                return 1;
+        }
+
+        int ch, prev = 0;
+        while ((ch = fgetc(input)) != EOF) {
+                if (isspace(ch)) {
+                        if (!isspace(prev)) fputc(' ', output);
+                } else {
+                        fputc(ch, output);
+                }
+                prev = ch;
+        }
+
+        fclose(input);
+        fclose(output);
+        return 0;
+}
+```
+
+q2 discard preprocessor directives
+
+```c
+#include <stdio.h>
+#include <string.h>
+
+int main(int argc, char *argv[]) {
+        if (argc != 3) {
+                printf("Usage: %s <input_file> <output_file>\n", argv[0]);
+                return 1;
+        }
+
+        FILE *input = fopen(argv[1], "r");
+        FILE *output = fopen(argv[2], "w");
+        if (!input || !output) {
+                perror("Error opening file");
+                return l1;
+        }
+
+        char line[1024];
+        while (fgets(line, sizeof(line), input)) {
+                if (line[0] != '#') {
+                        fputs(line, output);
+                }
+        }
+
+        fclose(input);
+        fclose(output);
+        return 0;
+}
+```
+
+q3 print keywords in uppercase
+
+```c
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+#define NUM_KEYWORDS 32
+
+const char *keywords[NUM_KEYWORDS] = {
+        "auto", "break", "case", "char", "const", "continue", "default", "do", "double", "else",
+        "enum", "extern", "float", "for", "goto", "if", "int", "long", "register", "return",
+        "short", "signed", "sizeof", "static", "struct", "switch", "typedef", "union", "unsigned",
+        "void", "volatile", "while"
+};
+
+int is_keyword(const char *word) {
+        for (int i = 0; i < NUM_KEYWORDS; i++) {
+                if (strcmp(word, keywords[i]) == 0) {
+                        return 1;
+                }
+        }
+        return 0;
+}
+
+void to_uppercase(const char *word) {
+        while (*word) {
+                putchar(toupper(*word));
+                word++;
+        }
+}
+
+int main(int argc, char *argv[]) {
+        if (argc != 2) {
+                printf("Usage: %s <input_file>\n", argv[0]);
+                return 1;
+        }
+
+        FILE *input = fopen(argv[1], "r");
+        if (!input) {
+                perror("Error opening file");
+                return 1;
+        }
+
+        char word[256];
+        int ch, index = 0;
+
+        while ((ch = fgetc(input)) != EOF) {
+                if (isalnum(ch) || ch == '_') {
+                        word[index++] = ch;
+                } else {
+                        if (index > 0) {
+                                word[index] = '\0';
+                                if (is_keyword(word)) {
+                                        to_uppercase(word);
+                                } else {
+                                        printf("%s", word);
+                                }
+                                index = 0;
+                        }
+                        putchar(ch);
+                }
+        }
+
+        if (index > 0) { // Handle last word if file doesn't end with whitespace
+                word[index] = '\0';
+                if (is_keyword(word)) {
+                        to_uppercase(word);
+                } else {
+                        printf("%s", word);
+                }
+        }
+
+        fclose(input);
+        return 0;
+}
+```
+———————————————————————————————————————————
+AD1 Write a program to display the function names present in the given input ‘C’ file along
+with its return type and number of arguments.
+
+#include<stdio.h>
+#include<stdlib.h>
+#incude<string.h>
+#include<ctype.h>
+
+
+#define MAX_LINE 1000
+
+int is_function_definition(const char* line){
+	return strchr(line, ‘(‘) && strchr(line,    ‘)’) && strchr(line, ‘{‘);
+}
+
+void trim(char* str){
+	int idx , i;
+	idx =0;
+
+	while(isspace(str[idx])){
+		idx++;
+	}
+	
+	if(idx != 0){
+		i = 0;
+		while(str[i + idx]){
+			str[I] = str[I + idx];
+			i++;
+		}
+		str[I] = ‘\0’;
+	}
+
+	i = strlen(str) - 1;
+	while( i >= 0 && isspace(str[I])){
+		str[I] = ‘\0’;
+		i- -;
+	}
+}
+
+
+int count_arguments(const char* arg_str){
+	if(strcmp(arg_str, “void”) == 0 || strlen(arg_str) == 0)
+	return 0;
+
+	int count = 1;
+	for(int i =0; arg_str[I]; i++){
+		if(arg_str[I] == ‘,’)
+			count++;
+		}
+	}
+	return count;
+}
+
+
+void parse_function(const char* line){
+	char temp[MAX_LINE];
+	strcpy(temp, line);
+
+
+	char* brace = strchr(temp, ‘{‘);
+	if(brace) *brace = ‘\0’;
+
+	char* open_paren = strchr(temp, ‘(‘);
+	char* close_paren = strchr(temp, ‘)’);
+
+	if (!open_paren || !close_paren) return;
+
+	*open_paren = '\0';
+	*close_paren = '\0';
+
+	char return_and_name[MAX_LINE];
+        	strcpy(return_and_name, temp);
+
+        	char* args = open_paren + 1;
+        	char* last_space = strrchr(return_and_name, ' ');
+
+        	if (!last_space) return;
+
+        	*last_space = '\0';
+      	char* return_type = return_and_name;
+        	char* func_name = last_space + 1;
+
+      	 trim(return_type);
+      	 trim(func_name);
+        	 trim(args);
+
+      	 printf("Function: %s\n", func_name);
+        	 printf("    Return Type: %s\n", return_type);
+        	 printf("    Number of Arguments: %d\n\n", count_arguments(args));
+}
+
+int main() {
+        FILE* file = fopen("example.c", "r");
+        if (!file) {
+                printf("Could not open the file.\n");
+                return 1;
+        }
+
+        char line[MAX_LINE];
+        while (fgets(line, sizeof(line), file)) {
+                if (is_function_definition(line)) {
+                        parse_function(line);
+                }
+        }
+
+        fclose(file);
+        return 0;
+}
+——————————————————————————————————————————————
+
+
+## Lab 3
+
+q1 identify keywords, operators, identifiers, numbers, special symbols, strings
+
+```c
+#include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+
+#define MAX_LEN 100
+
+// Keywords for C-like language
+const char *keywords[] = {"int", "float", "if", "else", "while", "return", "void", "for", "do", "switch", "case"};
+int num_keywords = sizeof(keywords) / sizeof(keywords[0]);
+
+// Function to check if a string is a keyword
+int isKeyword(char *str) {
+        for (int i = 0; i < num_keywords; i++) {
+                if (strcmp(str, keywords[i]) == 0)
+                        return 1;
+        }
+        return 0;
+}
+
+// Function to check if a character is an operator
+int isOperator(char ch) {
+        return (ch == '+' || ch == '-' || ch == '*' || ch == '/' || 
+                        ch == '=' || ch == '<' || ch == '>' || ch == '!');
+}
+
+// Function to check if a character is a special symbol
+int isSpecialSymbol(char ch) {
+        return (ch == ';' || ch == ',' || ch == '(' || ch == ')' || 
+                        ch == '{' || ch == '}' || ch == '[' || ch == ']');
+}
+
+// Function to analyze a given source code
+void lexicalAnalyzer(char *src) {
+        int i = 0;
+        char token[MAX_LEN];
+
+        while (src[i] != '\0') {
+                // Skip whitespace
+                if (isspace(src[i])) {
+                        i++;
+                        continue;
+                }
+
+                // Identifiers and Keywords
+                if (isalpha(src[i])) {
+                        int j = 0;
+                        while (isalnum(src[i]) || src[i] == '_') {
+                                token[j++] = src[i++];
+                        }
+                        token[j] = '\0';
+
+                        if (isKeyword(token))
+                                printf("Keyword: %s\n", token);
+                        else
+                                printf("Identifier: %s\n", token);
+                }
+                // Numbers
+                else if (isdigit(src[i])) {
+                        int j = 0;
+                        while (isdigit(src[i]) || src[i] == '.') {
+                                token[j++] = src[i++];
+                        }
+                        token[j] = '\0';
+                        printf("Number: %s\n", token);
+                }
+                // Operators
+                else if (isOperator(src[i])) {
+                        char op[3] = {src[i], '\0', '\0'};
+                        if ((src[i] == '!' || src[i] == '=' || src[i] == '<' || src[i] == '>') && src[i+1] == '=') {
+                                op[1] = '=';
+                                i++;
+                        }
+                        printf("Operator: %s\n", op);
+                        i++;
+                }
+                // Special symbols
+                else if (isSpecialSymbol(src[i])) {
+                        printf("Special Symbol: %c\n", src[i]);
+                        i++;
+                }
+                // String Literals
+                else if (src[i] == '"') {
+                        int j = 0;
+                        token[j++] = src[i++];
+                        while (src[i] != '"' && src[i] != '\0') {
+                                token[j++] = src[i++];
+                        }
+                        if (src[i] == '"') {
+                                token[j++] = src[i++];
+                        }
+                        token[j] = '\0';
+                        printf("String Literal: %s\n", token);
+                }
+                // Unknown character
+                else {
+                        printf("Unknown Token: %c\n", src[i]);
+                        i++;
+                }
+        }
+}
+
+int main() {
+        char source_code[MAX_LEN] = "int x = 10 + 20; float y = 5.5; if (x > y) { x = x - y; }";
+        
+        printf("Lexical Analysis Output:\n");
+        lexicalAnalyzer(source_code);
+
+        return 0;
+}
+```
+————————————————————————————————————————————————————————————————
+
+AD1 Design a Lexical Analyzer to generate tokens for a simple arithmetic calculator.
+#include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+
+void print_token(const char *type, const char *value) {
+        printf("%s: %s\n", type, value);
+}
+
+int main() {
+        char ch;
+        char buffer[100];
+        int i = 0;
+
+        FILE *fp = fopen("input.txt", "r");
+        if (!fp) {
+                printf("Error: Unable to open file.\n");
+                return 1;
+        }
+
+        while ((ch = fgetc(fp)) != EOF) {
+                if (isspace(ch)) {
+                        continue;
+                }
+
+                // Identifier or keyword
+                if (isalpha(ch)) {
+                        buffer[i++] = ch;
+                        while (isalnum(ch = fgetc(fp))) {
+                                buffer[i++] = ch;
+                        }
+                        buffer[i] = '\0';
+                        ungetc(ch, fp); // Put back the character that doesn't match
+                        print_token("IDENTIFIER", buffer);
+                        i = 0;
+                }
+
+                // Number
+                else if (isdigit(ch)) {
+                        buffer[i++] = ch;
+                        while (isdigit(ch = fgetc(fp))) {
+                                buffer[i++] = ch;
+                        }
+                        buffer[i] = '\0';
+                        ungetc(ch, fp);
+                        print_token("NUMBER", buffer);
+                        i = 0;
+                }
+
+                // Single-character tokens
+                else {
+                        switch (ch) {
+                                case '+': print_token("PLUS", "+"); break;
+                                case '-': print_token("MINUS", "-"); break;
+                                case '*': print_token("MULTIPLY", "*"); break;
+                                case '/': print_token("DIVIDE", "/"); break;
+                                case '=': print_token("ASSIGNMENT", "="); break;
+                                case '(': print_token("LEFT_PAREN", "("); break;
+                                case ')': print_token("RIGHT_PAREN", ")"); break;
+                                case ';': print_token("SEMICOLON", ";"); break;
+                                default:
+                                        printf("UNKNOWN CHARACTER: %c\n", ch);
+                        }
+                }
+        }
+
+        fclose(fp);
+        return 0;
+}
+ gcc q1.c -o lexer
+./lexer
+
+AD2 Design a lexical Analyzer to generate tokens for functions and structures in ‘C’.
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+#define MAX_TOKEN 100
+
+const char* keywords[] = {
+        "int", "float", "char", "double", "void", "struct", "return"
+};
+
+int is_keyword(const char *str) {
+        for (int i = 0; i < sizeof(keywords) / sizeof(keywords[0]); i++) {
+                if (strcmp(str, keywords[i]) == 0)
+                        return 1;
+        }
+        return 0;
+}
+
+int is_valid_identifier(const char *str) {
+        if (!isalpha(str[0]) && str[0] != '_') return 0;
+        for (int i = 1; str[i]; i++) {
+                if (!isalnum(str[i]) && str[i] != '_')
+                        return 0;
+        }
+        return 1;
+}
+
+void print_token(const char *type, const char *value) {
+        printf("%s: %s\n", type, value);
+}
+
+int main() {
+        FILE *fp = fopen("input.c", "r");
+        char ch, token[MAX_TOKEN];
+        int i = 0;
+
+        if (!fp) {
+                printf("Error opening file.\n");
+                return 1;
+        }
+
+        while ((ch = fgetc(fp)) != EOF) {
+                // Skip whitespace
+                if (isspace(ch)) continue;
+
+                // Identifier or keyword
+                if (isalpha(ch) || ch == '_') {
+                        token[i++] = ch;
+                        while (isalnum(ch = fgetc(fp)) || ch == '_') {
+                                token[i++] = ch;
+                        }
+                        token[i] = '\0';
+                        ungetc(ch, fp);
+
+                        if (is_keyword(token)) {
+                                print_token("KEYWORD", token);
+                        } else {
+                                print_token("IDENTIFIER", token);
+                        }
+                        i = 0;
+                }
+
+                // Numbers
+                else if (isdigit(ch)) {
+                        token[i++] = ch;
+                        while (isdigit(ch = fgetc(fp))) {
+                                token[i++] = ch;
+                        }
+                        token[i] = '\0';
+                        ungetc(ch, fp);
+                        print_token("NUMBER", token);
+                        i = 0;
+                }
+
+                // Single-character tokens
+                else {
+                        switch (ch) {
+                                case '#': print_token("PREPROCESSOR", "#"); break;
+                                case '<': print_token("LESS_THAN", "<"); break;
+                                case '>': print_token("GREATER_THAN", ">"); break;
+                                case '.': print_token("DOT", "."); break;
+                                case '+': print_token("PLUS", "+"); break;
+                                case '-': print_token("MINUS", "-"); break;
+                                case '*': print_token("ASTERISK", "*"); break;
+                                case '/': print_token("SLASH", "/"); break;
+                                case '=': print_token("ASSIGNMENT", "="); break;
+                                case '(': print_token("LEFT_PAREN", "("); break;
+                                case ')': print_token("RIGHT_PAREN", ")"); break;
+                                case '{': print_token("LEFT_BRACE", "{"); break;
+                                case '}': print_token("RIGHT_BRACE", "}"); break;
+                                case '[': print_token("LEFT_BRACKET", "["); break;
+                                case ']': print_token("RIGHT_BRACKET", "]"); break;
+                                case ';': print_token("SEMICOLON", ";"); break;
+                                case ',': print_token("COMMA", ","); break;
+                                case '"': print_token("QUOTE", "\""); break;
+                                default:
+                                        printf("UNKNOWN CHARACTER: %c\n", ch);
+                        }
+                }
+        }
+
+        fclose(fp);
+        return 0;
+}
+
+#include <stdio.h>
+#include <string.h>
+
+struct Student {
+        int id;
+        char name[50];
+};
+
+int sum(int a, int b) {
+        return a + b;
+}
+
+————————————————————————————————————————————————
+## Lab 4
+
+q1 local and global symbol table
+
+```c
+#include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+
+#define MAX_LEN 100
+#define TABLE_SIZE 100
+
+// Keywords for C-like language
+const char *keywords[] = {"int", "float", "if", "else", "while", "return", "void", "for", "do", "switch", "case"};
+int num_keywords = sizeof(keywords) / sizeof(keywords[0]);
+
+// Symbol Table Entry
+typedef struct {
+        char name[MAX_LEN];
+        char type[MAX_LEN];
+} Symbol;
+
+// Symbol Tables
+Symbol globalTable[TABLE_SIZE];
+int globalCount = 0;
+
+Symbol localTable[TABLE_SIZE];
+int localCount = 0;
+
+// Function to check if a string is a keyword
+int isKeyword(char *str) {
+        for (int i = 0; i < num_keywords; i++) {
+                if (strcmp(str, keywords[i]) == 0)
+                        return 1;
+        }
+        return 0;
+}
+
+// Function to check if a character is an operator
+int isOperator(char ch) {
+        return (ch == '+' || ch == '-' || ch == '*' || ch == '/' || 
+                        ch == '=' || ch == '<' || ch == '>' || ch == '!');
+}
+
+// Function to check if a character is a special symbol
+int isSpecialSymbol(char ch) {
+        return (ch == ';' || ch == ',' || ch == '(' || ch == ')' || 
+                        ch == '{' || ch == '}' || ch == '[' || ch == ']');
+}
+
+// Function to add a symbol to the global or local table
+void addSymbol(Symbol *table, int *count, const char *name, const char *type) {
+        if (*count < TABLE_SIZE) {
+                strcpy(table[*count].name, name);
+                strcpy(table[*count].type, type);
+                (*count)++;
+        }
+}
+
+// Function to print the symbol table
+void printSymbolTable(Symbol *table, int count, const char *tableName) {
+        printf("\n%s Symbol Table:\n", tableName);
+        for (int i = 0; i < count; i++) {
+                printf("Name: %s, Type: %s\n", table[i].name, table[i].type);
+        }
+}
+
+// Lexical Analyzer with Symbol Table Management
+void lexicalAnalyzer(char *src) {
+        int i = 0;
+        char token[MAX_LEN];
+        char currentType[MAX_LEN] = ""; // To store the current variable type
+
+        while (src[i] != '\0') {
+                // Skip whitespace
+                if (isspace(src[i])) {
+                        i++;
+                        continue;
+                }
+
+                // Identifiers and Keywords
+                if (isalpha(src[i])) {
+                        int j = 0;
+                        while (isalnum(src[i]) || src[i] == '_') {
+                                token[j++] = src[i++];
+                        }
+                        token[j] = '\0';
+
+                        if (isKeyword(token)) {
+                                printf("Keyword: %s\n", token);
+                                strcpy(currentType, token); // Set current type for variables
+                        } else {
+                                printf("Identifier: %s\n", token);
+                                // Add to symbol table
+                                if (strcmp(currentType, "") != 0) {
+                                        if (src[i] == '(') {
+                                                // Function identifier (not added to symbol table)
+                                        } else {
+                                                // Variable identifier
+                                                addSymbol(globalTable, &globalCount, token, currentType);
+                                        }
+                                }
+                        }
+                }
+                // Numbers
+                else if (isdigit(src[i])) {
+                        int j = 0;
+                        while (isdigit(src[i]) || src[i] == '.') {
+                                token[j++] = src[i++];
+                        }
+                        token[j] = '\0';
+                        printf("Number: %s\n", token);
+                }
+                // Operators were
+                else if (isOperator(src[i])) {
+                        char op[3] = {src[i], '\0', '\0'};
+                        if ((src[i] == '!' || src[i] == '=' || src[i] == '<' || src[i] == '>') && src[i+1] == '=') {
+                                op[1] = '=';
+                                i++;
+                        }
+                        printf("Operator: %s\n", op);
+                        i++;
+                }
+                // Special symbols
+                else if (isSpecialSymbol(src[i])) {
+                        printf("Special Symbol: %c\n", src[i]);
+                        if (src[i] == '{') {
+                                // Entering a local scope (reset local table)
+                                localCount = 0;
+                        } else if (src[i] == '}') {
+                                // Exiting a local scope (print local table)
+                                printSymbolTable(localTable, localCount, "Local");
+                        }
+                        i++;
+                }
+                // String Literals
+                else if (src[i] == '"') {
+                        int j = 0;
+                        token[j++] = src[i++];
+                        while (src[i] != '"' && src[i] != '\0') {
+                                token[j++] = src[i++];
+                        }
+                        if (src[i] == '"') {
+                                token[j++] = src[i++];
+                        }
+                        token[j] = '\0';
+                        printf("String Literal: %s\n", token);
+                }
+                // Unknown character
+                else {
+                        printf("Unknown Token: %c\n", src[i]);
+                        i++;
+                }
+        }
+}
+
+int main() {
+        char source_code[MAX_LEN] = "int x = 10 + 20; float y = 5.5; if (x > y) { int z = x - y; }";
+        
+        printf("Lexical Analysis Output:\n");
+        lexicalAnalyzer(source_code);
+
+        // Print the global symbol table
+        printSymbolTable(globalTable, globalCount, "Global");
+
+        return 0;
+}
+```
+——————————————————————————————————————————————————————————————
+AD1 Design a lexical analyser to generate tokens for the C program with “structure” construct
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+#include <stdlib.h>
+
+char keywords[][10] = {"int", "char", "float", "struct", "void", "double"};
+
+int is_keyword(char *word) {
+        for (int i = 0; i < sizeof(keywords) / sizeof(keywords[0]); i++) {
+                if (strcmp(word, keywords[i]) == 0)
+                        return 1;
+        }
+        return 0;
+}
+
+void print_token(char *type, char *value) {
+        printf("%s: %s\n", type, value);
+}
+
+int main() {
+        FILE *fp = fopen("example.c", "r");
+        if (!fp) {
+                printf("Cannot open file.\n");
+                return 1;
+        }
+
+        char ch, buffer[100];
+        int i = 0;
+
+        while ((ch = fgetc(fp)) != EOF) {
+                // Skip whitespace
+                if (isspace(ch)) continue;
+
+                // Identifiers and Keywords
+                if (isalpha(ch) || ch == '_') {
+                        buffer[i++] = ch;
+                        while (isalnum(ch = fgetc(fp)) || ch == '_') {
+                                buffer[i++] = ch;
+                        }
+                        buffer[i] = '\0';
+                        i = 0;
+                        ungetc(ch, fp);
+
+                        if (is_keyword(buffer)) {
+                                print_token("KEYWORD", buffer);
+                        } else {
+                                print_token("IDENTIFIER", buffer);
+                        }
+                }
+                // Numbers
+                else if (isdigit(ch)) {
+                        buffer[i++] = ch;
+                        while (isdigit(ch = fgetc(fp))) {
+                                buffer[i++] = ch;
+                        }
+                        buffer[i] = '\0';
+                        i = 0;
+                        ungetc(ch, fp);
+                        print_token("NUMBER", buffer);
+                }
+                // String literals
+                else if (ch == '"') {
+                        buffer[i++] = ch;
+                        while ((ch = fgetc(fp)) != '"' && ch != EOF) {
+                                buffer[i++] = ch;
+                        }
+                        buffer[i++] = '"';
+                        buffer[i] = '\0';
+                        i = 0;
+                        print_token("STRING", buffer);
+                }
+                // Single character symbols
+                else if (ispunct(ch)) {
+                        char symbol[2] = {ch, '\0'};
+                        print_token("SYMBOL", symbol);
+                }
+        }
+
+        fclose(fp);
+        return 0;
+}
+
+AD2Write a getNextToken ( ) to generate tokens for the perl script given below.
+
+#include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+#include <stdlib.h>
+
+#define MAX_TOKEN_LEN 100
+
+// Token types
+typedef enum {
+        KEYWORD, IDENTIFIER, OPERATOR, SYMBOL, NUMBER, STRING, COMMENT, SPECIAL_VAR, END
+} TokenType;
+
+const char* tokenTypeNames[] = {
+        "KEYWORD", "IDENTIFIER", "OPERATOR", "SYMBOL", "NUMBER", "STRING", "COMMENT", "SPECIAL_VAR", "END"
+};
+
+// Keywords in Perl (simplified)
+const char* keywords[] = {"foreach", "scalar"};
+
+int is_keyword(const char* word) {
+        for (int i = 0; i < sizeof(keywords)/sizeof(keywords[0]); i++) {
+                if (strcmp(word, keywords[i]) == 0)
+                        return 1;
+        }
+        return 0;
+}
+
+TokenType getNextToken(FILE* fp, char* token) {
+        int ch;
+        int i = 0;
+
+        while ((ch = fgetc(fp)) != EOF && isspace(ch));    // Skip whitespace
+
+        if (ch == EOF)
+                return END;
+
+        // Comments
+        if (ch == '#') {
+                token[i++] = ch;
+                while ((ch = fgetc(fp)) != EOF && ch != '\n')
+                        token[i++] = ch;
+                token[i] = '\0';
+                return COMMENT;
+        }
+
+        // Identifiers, keywords, special variables
+        if (isalpha(ch) || ch == '$' || ch == '@') {
+                token[i++] = ch;
+                while ((ch = fgetc(fp)) != EOF && (isalnum(ch) || ch == '_' || ch == '$')) {
+                        token[i++] = ch;
+                }
+                token[i] = '\0';
+                if (ch != EOF) ungetc(ch, fp);
+
+                if (token[0] == '$' || token[0] == '@') return SPECIAL_VAR;
+                if (is_keyword(token)) return KEYWORD;
+                return IDENTIFIER;
+        }
+
+        // Numbers
+        if (isdigit(ch)) {
+                token[i++] = ch;
+                while ((ch = fgetc(fp)) != EOF && isdigit(ch)) {
+                        token[i++] = ch;
+                }
+                token[i] = '\0';
+                if (ch != EOF) ungetc(ch, fp);
+                return NUMBER;
+        }
+
+        // Operators
+        if (strchr("=+*", ch)) {
+                token[i++] = ch;
+                ch = fgetc(fp);
+                if (ch == '=' || ch == '+') {
+                        token[i++] = ch;
+                } else {
+                        ungetc(ch, fp);
+                }
+                token[i] = '\0';
+                return OPERATOR;
+        }
+
+        // Symbols
+        if (strchr("(){};", ch)) {
+                token[i++] = ch;
+                token[i] = '\0';
+                return SYMBOL;
+        }
+
+        // Default single-char token
+        token[i++] = ch;
+        token[i] = '\0';
+        return SYMBOL;
+}
+
+int main() {
+        FILE* fp = fopen("script.pl", "r");
+        if (!fp) {
+                printf("Could not open script.pl\n");
+                return 1;
+        }
+
+        char token[MAX_TOKEN_LEN];
+        TokenType type;
+
+        printf("Tokens from script.pl:\n\n");
+
+        while ((type = getNextToken(fp, token)) != END) {
+                printf("%-12s : %s\n", tokenTypeNames[type], token);
+        }
+
+        fclose(fp);
+        return 0;
+}
+———————————————————————————————————————————————————————
+## Lab 5
+
+q1 count vowels and consonants
+
+```c
+%{
+#include <stdio.h>
+
+int vowels = 0, consonants = 0;
+
+int yywrap() {
+        return 1;
+}
+%}
+
+%%
+
+[aeiouAEIOU]          { vowels++; }                          // Count vowels
+[a-zA-Z]                  { consonants++; }                  // Count all alphabets (including vowels initially)
+[aeiouAEIOU]          { consonants--; }                  // Remove vowels from consonant count
+
+[^a-zA-Z]                ;    // Ignore non-alphabetic characters (digits, spaces, punctuation)
+
+%%
+
+int main() {
+        printf("Enter text (Ctrl+D to end input):\n");
+        yylex();
+        printf("\nResults:\n");
+        printf("Vowels: %d\n", vowels);
+        printf("Consonants: %d\n", consonants);
+        return 0;
+}
+```
+
+q2 count words characters blanks lines
+
+```c
+%{
+#include <stdio.h>
+int characters = 0, blanks = 0, lines = 0;
+%}
+
+%%
+
+\n                  { lines++; }
+[ \t]        { blanks++; }
+.                { characters++; }
+
+%%
+
+int main(int argc, char **argv) {
+        yylex();
+        printf("Characters: %d\nBlanks: %d\nLines: %d\n", characters, blanks, lines);
+        return 0;
+}
+```
+
+q3 count pos/neg int/float
+
+```c
+%{
+#include <stdio.h>
+int characters = 0, blanks = 0, lines = 0;
+%}
+
+%%
+
+\n                  { lines++; }
+[ \t]        { blanks++; }
+.                { characters++; }
+
+%%
+
+int main(int argc, char **argv) {
+        yylex();
+        printf("Characters: %d\nBlanks: %d\nLines: %d\n", characters, blanks, lines);
+        return 0;
+}
+```
+
+q4 replace scanf with READ and printf with WRITE, with count
+
+```c
+%{
+#include <stdio.h>
+
+int scanf_count = 0, printf_count = 0;
+
+int yywrap() {
+        return 1;
+}
+%}
+
+%%
+
+"scanf"        { printf("READ"); scanf_count++; }
+"printf"      { printf("WRITE"); printf_count++; }
+
+.|\n              { putchar(yytext[0]); }    // Print other characters unchanged
+
+%%
+
+int main() {
+        printf("Enter C program text (Ctrl+D to end input):\n");
+        yylex();
+        printf("\n\nTotal occurrences:\n");
+        printf("Scanf replaced: %d times\n", scanf_count);
+        printf("Printf replaced: %d times\n", printf_count);
+        return 0;
+}
+
+```
+——————————————————————————————————————————————
+AD1 Generate tokens for a simple C program. (Tokens to be considered are: Keywords,
+Identifiers, Special Symbols, arithmetic operators and logical operators).
+#include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+#include <stdlib.h>
+
+#define MAX_LEN 100
+
+const char *keywords[] = {
+        "int", "float", "char", "if", "else", "while", "return", "for", "void", "main"
+};
+
+const char *special_symbols = "{}();,";
+const char *arithmetic_ops = "+-*/%";
+const char *logical_ops[] = {"&&", "||", "!"};
+
+int is_keyword(const char *word) {
+        for (int i = 0; i < sizeof(keywords) / sizeof(keywords[0]); i++) {
+                if (strcmp(word, keywords[i]) == 0) return 1;
+        }
+        return 0;
+}
+
+int is_logical_op(const char *op) {
+        for (int i = 0; i < sizeof(logical_ops) / sizeof(logical_ops[0]); i++) {
+                if (strcmp(op, logical_ops[i]) == 0) return 1;
+        }
+        return 0;
+}
+
+void print_token(const char *type, const char *value) {
+        printf("%-18s: %s\n", type, value);
+}
+
+void tokenize_file(const char *filename) {
+        FILE *fp = fopen(filename, "r");
+        if (!fp) {
+                printf("Error opening file.\n");
+                return;
+        }
+
+        char ch, buffer[MAX_LEN];
+        int i = 0;
+
+        while ((ch = fgetc(fp)) != EOF) {
+                // Skip whitespaces
+                if (isspace(ch)) continue;
+
+                // Identifiers and Keywords
+                if (isalpha(ch) || ch == '_') {
+                        buffer[i++] = ch;
+                        while (isalnum(ch = fgetc(fp)) || ch == '_') {
+                                buffer[i++] = ch;
+                        }
+                        buffer[i] = '\0';
+                        i = 0;
+                        ungetc(ch, fp);
+
+                        if (is_keyword(buffer)) {
+                                print_token("Keyword", buffer);
+                        } else {
+                                print_token("Identifier", buffer);
+                        }
+                }
+
+                // Numbers (you can extend this to float, etc.)
+                else if (isdigit(ch)) {
+                        buffer[i++] = ch;
+                        while (isdigit(ch = fgetc(fp))) {
+                                buffer[i++] = ch;
+                        }
+                        buffer[i] = '\0';
+                        i = 0;
+                        ungetc(ch, fp);
+                        print_token("Number", buffer);
+                }
+
+                // Logical operators (&&, ||)
+                else if (ch == '&' || ch == '|') {
+                        char next = fgetc(fp);
+                        buffer[0] = ch;
+                        buffer[1] = next;
+                        buffer[2] = '\0';
+                        if ((ch == '&' && next == '&') || (ch == '|' && next == '|')) {
+                                print_token("Logical Operator", buffer);
+                        } else {
+                                ungetc(next, fp);
+                        }
+                }
+
+                // Single-char logical operator (!)
+                else if (ch == '!') {
+                        buffer[0] = ch;
+                        buffer[1] = '\0';
+                        print_token("Logical Operator", buffer);
+                }
+
+                // Arithmetic operators
+                else if (strchr(arithmetic_ops, ch)) {
+                        buffer[0] = ch;
+                        buffer[1] = '\0';
+                        print_token("Arithmetic Operator", buffer);
+                }
+
+                // Special symbols
+                else if (strchr(special_symbols, ch)) {
+                        buffer[0] = ch;
+                        buffer[1] = '\0';
+                        print_token("Special Symbol", buffer);
+                }
+
+                // Relational or assignment or others (can be extended)
+                else if (ch == '<' || ch == '>' || ch == '=' || ch == '!') {
+                        buffer[0] = ch;
+                        char next = fgetc(fp);
+                        if (next == '=') {
+                                buffer[1] = next;
+                                buffer[2] = '\0';
+                        } else {
+                                buffer[1] = '\0';
+                                ungetc(next, fp);
+                        }
+                        print_token("Operator", buffer);
+                }
+
+                // Unknown characters
+                else {
+                        buffer[0] = ch;
+                        buffer[1] = '\0';
+                        print_token("Unknown", buffer);
+                }
+        }
+
+        fclose(fp);
+}
+
+int main() {
+        tokenize_file("input.c");
+        return 0;
+}
+
+AD2 Write a FLEX program to identify verb, noun and pronoun.
+%{
+#include <stdio.h>
+
+// Add this to fix the undefined symbol error
+int yywrap() {
+        return 1;
+}
+%}
+
+%%
+
+he|she|they|it|we|I|you            { printf("Pronoun: %s\n", yytext); }
+dog|ball|city|car|apple            { printf("Noun: %s\n", yytext); }
+run|walk|play|go|eat|sleep      { printf("Verb: %s\n", yytext); }
+[ \t\n]+                                          ;    // skip whitespace
+.                                                        ;    // ignore all other characters
+
+%%
+
+int main() {
+        printf("Enter a sentence:\n");
+        yylex();
+        return 0;
+}
+
+———————————————————————————————————————————————
+## Lab 6
+
+q1 Write a recursive descent parser for the following set of simple grammars.
+1. S→a | > | ( T )
+T→T, S|S
+2. S→UVW
+U →(S) | aSb | d
+V → aV | 𝜖
+W → cW | 𝜖
+3. S→aAcBe
+A→Ab|b
+B→d
+
+S→a | > | ( T ) T→T, S|S
+ 
+#include <stdio.h> #include <stdlib.h> #include <string.h>
+ 
+int curr = 0; char str[100];
+ 
+void S(); void T(); void invalid(); void valid();
+ 
+void invalid() {     printf("-----------------ERROR!----------------\n");     exit(0); }
+ 
+void valid() {     printf("----------------SUCCESS!---------------\n");     exit(0); }
+ 
+void S() {     if (str[curr] == 'a') {         curr++;     } else if (str[curr] == '>') {         curr++;     } else if (str[curr] == '(') {         curr++;         T();         if (str[curr] == ')') {             curr++;         } else {             invalid();         }     } else {         invalid();     } }
+ 
+void T() {     S();     if (str[curr] == ',') {         curr++;         T();     } }
+ 
+int main() {     printf("Enter String: ");     scanf("%s", str);      S();      if (str[curr] == '\0') {          valid();      } else {         invalid();      }     return 0; }
+ 
+//Enter String: (a //-----------------ERROR!----------------
+ 
+//Enter String: a //----------------SUCCESS!---------------
+ 
+ S→UVW U →(S) | aSb | d V → aV | 𝜖 W → cW | 𝜖
+ 
+#include <stdio.h> #include <stdlib.h> #include <string.h>
+ 
+int curr = 0; char str[100];
+ 
+void S(); void U(); void V(); void W();
+ 
+void invalid() {     printf("-----------------ERROR!----------------\n");     exit(0); }
+ 
+void valid() {     printf("----------------SUCCESS!---------------\n");     exit(0); }
+ 
+void S() {     U();     V();     W(); }
+ 
+void U() {     if (str[curr] == '(') {         curr++;         S();         if (str[curr] == ')') {             curr++;             return;         } else {             invalid();         }     } else if (str[curr] == 'a') {         curr++;         S();         if (str[curr] == 'b') {             curr++;             return;         } else {             invalid();         }     } else if (str[curr] == 'd') {         curr++;         return;     } else {         invalid();     } }
+ 
+ void V() {     if (str[curr] == 'a') {         curr++;         V();     }     return; }
+ 
+ void W() {     if (str[curr] == 'c') {         curr++;         W();     }
+ 
+    return; }
+ 
+int main() {     printf("Enter String: ");     scanf("%s", str);      if (strchr(str, '$') == NULL) {         strcat(str, "$");     }      S();      if (str[curr] == '$') {         valid();     } else {         invalid();     }      return 0; }
+ 
+// Enter String: (aSb)c //-----------------ERROR!----------------
+ 
+//Enter String: (d)c$     //----------------SUCCESS!---------------
+ 
+ S→aAcBe A→Ab|b B→d
+ 
+#include <stdio.h> #include <stdlib.h> #include <string.h>
+ 
+int curr = 0; char str[100];
+ 
+void S(); void A(); void B();
+ 
+void invalid() {     printf("-----------------ERROR!----------------\n");     exit(0); }
+ 
+void valid() {     printf("----------------SUCCESS!---------------\n");     exit(0); }
+ 
+void S() {     if (str[curr] == 'a') {         curr++;         A();         if (str[curr] == 'c') {             curr++;             B();             if (str[curr] == 'e') {                 curr++;                 return;             } else {                 invalid();             }         } else {             invalid();         }     } else {         invalid();     } }
+ 
+void A() {     if (str[curr] == 'b') {         curr++;
+ 
+        if (str[curr] == 'b') {             A();         }     } else {         invalid();     } }
+ 
+void B() {     if (str[curr] == 'd') {         curr++;         return;     } else {         invalid();     } }
+ 
+int main() {     printf("Enter String: ");     scanf("%s", str);
+ 
+    if (strchr(str, '$') == NULL) {         strcat(str, "$");     }      S();      if (str[curr] == '$') {         valid();     } else {         invalid();     }      return 0; }
+ 
+//Enter String: abcde$ //----------------SUCCESS!---------------
+ 
+//Enter String: acde$ //-----------------ERROR!----------------
+ 
+ E --> TEprime E' --> +TE' / 𝜖 T --> FT' T' --> *FT' / 𝜖 F --> (E) / i
+ 
+#include <stdio.h> #include <stdlib.h> #include <string.h>
+ 
+char str[100]; int curr = 0;
+ 
+void E(); void Eprime(); void T(); void Tprime(); void F();
+ 
+void valid() {     printf("----------------SUCCESS!---------------\n");     exit(0); }
+ 
+void invalid() {     printf("-----------------ERROR!----------------\n");     exit(0); }
+ 
+void E() {     T();     Eprime(); }
+ 
+void Eprime() {     if (str[curr] == '+') {         curr++;         T();         Eprime();     }     // epsilon transition }
+ 
+void T() {     F();     Tprime(); }
+ 
+void Tprime() {     if (str[curr] == '*') {         curr++;         F();         Tprime();     }     // epsilon transition }
+ 
+void F() {     if (str[curr] == 'i') {         curr++;     } else if (str[curr] == '(') {         curr++;         E();         if (str[curr] == ')') {             curr++;         } else {             invalid();         }     } else {         invalid();     } }
+ 
+int main() {     printf("Enter String: ");     scanf("%s", str);     E();     // Accept if the next character is '$' and it's the end     if (str[curr] == '$' && str[curr + 1] == '\0') {         valid();     } else {         invalid();     }     return 0; }
+ 
+Enter string: i+i$ ----------------SUCCESS!---------------
+ 
+i+*i$ - error
+
+```
+AD1 Write a program with functions first(X) and follow(X) to find first and follow for X where X
+is a non-terminal in a grammar
+
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+#define MAX 10
+
+char production[MAX][10];
+char firstSet[MAX][10], followSet[MAX][10];
+int num;
+
+void findFirst(char* result, char c);
+void findFollow(char* result, char c);
+void addToSet(char* set, char val);
+int isPresent(char* set, char val);
+
+int main() {
+        int i;
+        char target;
+
+        printf("Enter number of productions: ");
+        scanf("%d", &num);
+
+        printf("Enter productions (e.g., S=AB):\n");
+        for (i = 0; i < num; i++) {
+                scanf("%s", production[i]);
+        }
+
+        printf("\nEnter non-terminal to find FIRST and FOLLOW: ");
+        scanf(" %c", &target);
+
+        char firstRes[10] = "";
+        findFirst(firstRes, target);
+        printf("FIRST(%c): { ", target);
+        for (i = 0; firstRes[i] != '\0'; i++)
+                printf("%c ", firstRes[i]);
+        printf("}\n");
+
+        char followRes[10] = "";
+        addToSet(followRes, '$');    // Start symbol gets $
+        findFollow(followRes, target);
+        printf("FOLLOW(%c): { ", target);
+        for (i = 0; followRes[i] != '\0'; i++)
+                printf("%c ", followRes[i]);
+        printf("}\n");
+
+        return 0;
+}
+
+void addToSet(char* set, char val) {
+        if (!isPresent(set, val)) {
+                int len = strlen(set);
+                set[len] = val;
+                set[len + 1] = '\0';
+        }
+}
+
+int isPresent(char* set, char val) {
+        for (int i = 0; set[i] != '\0'; i++)
+                if (set[i] == val)
+                        return 1;
+        return 0;
+}
+
+void findFirst(char* result, char c) {
+        if (!isupper(c)) { // terminal
+                addToSet(result, c);
+                return;
+        }
+
+        for (int i = 0; i < num; i++) {
+                if (production[i][0] == c) {
+                        char* rhs = &production[i][2];
+                        if (rhs[0] == '#') {
+                                addToSet(result, '#'); // epsilon
+                        } else {
+                                int j = 0;
+                                while (rhs[j] != '\0') {
+                                        char temp[10] = "";
+                                        findFirst(temp, rhs[j]);
+                                        for (int k = 0; temp[k] != '\0'; k++) {
+                                                if (temp[k] != '#') {
+                                                        addToSet(result, temp[k]);
+                                                }
+                                        }
+
+                                        if (!isPresent(temp, '#')) break; // no epsilon, stop
+                                        j++; // move to next symbol
+                                        if (rhs[j] == '\0') addToSet(result, '#');
+                                }
+                        }
+                }
+        }
+}
+
+void findFollow(char* result, char c) {
+        for (int i = 0; i < num; i++) {
+                char* rhs = &production[i][2];
+                for (int j = 0; rhs[j] != '\0'; j++) {
+                        if (rhs[j] == c) {
+                                if (rhs[j + 1] != '\0') {
+                                        char temp[10] = "";
+                                        findFirst(temp, rhs[j + 1]);
+                                        for (int k = 0; temp[k] != '\0'; k++) {
+                                                if (temp[k] != '#') addToSet(result, temp[k]);
+                                        }
+
+                                        if (isPresent(temp, '#'))
+                                                findFollow(result, production[i][0]);
+                                } else {
+                                        if (production[i][0] != c) {
+                                                findFollow(result, production[i][0]);
+                                        }
+                                }
+                        }
+                }
+        }
+}
+
+AD2 Write a program to remove left recursion from the grammar.
+
+
+#include <stdio.h>
+#include <string.h>
+
+#define MAX 10
+#define SIZE 100
+
+int main() {
+        char prod[MAX][SIZE], alpha[MAX][SIZE], beta[MAX][SIZE];
+        int n, i, j, k, idxAlpha = 0, idxBeta = 0;
+        char nonTerminal;
+
+        printf("Enter number of productions: ");
+        scanf("%d", &n);
+
+        printf("Enter productions (e.g., A->Aa|b):\n");
+        for (i = 0; i < n; i++) {
+                scanf("%s", prod[i]);
+        }
+
+        for (i = 0; i < n; i++) {
+                nonTerminal = prod[i][0];
+                if (prod[i][3] == nonTerminal) {
+                        // Left recursion
+                        j = 3;
+                        while (prod[i][j] != '\0') {
+                                if (prod[i][j] == '|') j++;
+                                if (prod[i][j] == nonTerminal) {
+                                        j++;
+                                        k = 0;
+                                        while (prod[i][j] != '|' && prod[i][j] != '\0') {
+                                                alpha[idxAlpha][k++] = prod[i][j++];
+                                        }
+                                        alpha[idxAlpha][k] = '\0';
+                                        idxAlpha++;
+                                } else {
+                                        k = 0;
+                                        while (prod[i][j] != '|' && prod[i][j] != '\0') {
+                                                beta[idxBeta][k++] = prod[i][j++];
+                                        }
+                                        beta[idxBeta][k] = '\0';
+                                        idxBeta++;
+                                }
+                        }
+
+                        printf("\nAfter removing left recursion:\n");
+                        printf("%c->", nonTerminal);
+                        for (j = 0; j < idxBeta; j++) {
+                                printf("%s%c'", beta[j], nonTerminal);
+                                if (j < idxBeta - 1) printf("|");
+                        }
+
+                        printf("\n%c'->", nonTerminal);
+                        for (j = 0; j < idxAlpha; j++) {
+                                printf("%s%c'", alpha[j], nonTerminal);
+                                if (j < idxAlpha - 1) printf("|");
+                        }
+                        printf("|ε\n");
+                } else {
+                        // No left recursion
+                        printf("No Left Recursion in: %s\n", prod[i]);
+                }
+
+                // Reset for next production
+                idxAlpha = idxBeta = 0;
+        }
+
+        return 0;
+}
+
+gcc q1.c -o lexer
+sushyanthmohan@Sushyanths-MacBook-Air-2 ~ % ./lexer                    
+Enter number of productions: 1
+Enter productions (e.g., A->Aa|b):
+A->Aa|b
+
+After removing left recursion:
+A->bA'
+A'->aA'|ε
